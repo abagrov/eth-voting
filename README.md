@@ -1,6 +1,6 @@
 # Referendum smart contract
 
-This project demonstrates referendum smart contract created with solidity. Users can create referendums, vote for any address, providing 0.01 eth as vote price. After 3 days referendum can be closed and winner will rewarded with all eth provided in this referendum excluding fee 10%.
+This project demonstrates referendum smart contract created with solidity. Users can create referendums, vote for any address, providing 0.01 eth as vote price. After 3 days referendum can be closed and winner will be rewarded with all eth provided in this referendum excluding fee 10%.
 
 ### Install
 ```
