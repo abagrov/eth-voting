@@ -141,6 +141,10 @@ describe("Referendum contract", function () {
 
       await expect(contract.endReferendum(1))
         .to.be.revertedWith("Two or more winners, cant end referendum.");
+
+      await contract.connect(addrs[2]).vote(1, addr2.address, { value: parseEther("0.01") });
+      await expect(await contract.endReferendum(1))
+        .to.changeEtherBalance(addr2, parseEther("0.054"))
     });
 
     it("Withdraw only by owner, reverted if amount more than commission even sufficient funds", async function () {
@@ -159,7 +163,7 @@ describe("Referendum contract", function () {
         .to.be.revertedWith("Amount is more than avaliable balance.");
 
       await expect(await contract.withdraw(owner.address, parseEther("0")))
-       .to.changeEtherBalance(owner, parseEther("0.001"));
+        .to.changeEtherBalance(owner, parseEther("0.001"));
 
       await contract.withdraw(owner.address, parseEther("0"));
 
@@ -174,7 +178,7 @@ describe("Referendum contract", function () {
         .to.be.reverted;
 
       await expect(await contract.withdraw(owner.address, parseEther("0")))
-       .to.changeEtherBalance(owner, parseEther("0.004"));
+        .to.changeEtherBalance(owner, parseEther("0.004"));
 
       await contract.endReferendum(2);
     });

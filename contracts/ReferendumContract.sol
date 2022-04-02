@@ -21,7 +21,9 @@ contract ReferendumContract is Ownable {
         string name;
         uint startDate;
         bool isEnded;
+        bool twoWinners;
 
+        uint numWinnerVotes;
         address payable winner;
         address payable[] candidateAddresses;
         mapping (address => uint) candidates;
@@ -53,7 +55,7 @@ contract ReferendumContract is Ownable {
         require(msg.value >= .01 ether,"Making vote costs more than you provided.");
         
         Referendum storage r = referendums[_referendumId];
-        require(r.votes[msg.sender]==address(0), "You already voted in this referendum.");
+        require(r.votes[msg.sender] == address(0), "You already voted in this referendum.");
         require(!r.isEnded, "Referendum already ended.");
 
         if (r.candidates[_candidate] == 0)  r.candidateAddresses.push(_candidate);
@@ -62,6 +64,20 @@ contract ReferendumContract is Ownable {
         r.numVotes++;
         r.votes[msg.sender] = _candidate;
         lockedBalance += takeCommission(msg.value);
+
+        if (r.winner == address(0)) {
+            r.numWinnerVotes++;
+            r.winner = _candidate;
+        } else if (r.winner == _candidate) {
+            r.numWinnerVotes++;
+            r.twoWinners = false;
+        } else if (r.candidates[_candidate] > r.numWinnerVotes) {
+            r.numWinnerVotes = r.candidates[_candidate];
+            r.winner = _candidate;
+            r.twoWinners = false;
+        } else if (r.candidates[_candidate] == r.numWinnerVotes) {
+            r.twoWinners = true;
+        }
 
         emit VoteConducted(_referendumId, _candidate, msg.sender);
 
@@ -73,33 +89,19 @@ contract ReferendumContract is Ownable {
         require(block.timestamp - r.startDate > 3 days, "Less than three days have passed since the beginning of the referendum.");
         require(!r.isEnded, "Referendum already ended.");
         require(r.candidateAddresses.length != 0, "Seems like no one made a vote.");
-
-        uint maxVotes=0;
-        bool twoWinners;
-        address payable winner;
-        for (uint i = 0; i < r.candidateAddresses.length; i ++) {
-            if (r.candidates[r.candidateAddresses[i]] > maxVotes) {
-                maxVotes = r.candidates[r.candidateAddresses[i]];
-                winner = r.candidateAddresses[i];
-                twoWinners = false;
-            }
-            else if (r.candidates[r.candidateAddresses[i]] == maxVotes) {
-                twoWinners = true;
-            }
-        }
-
-        require(!twoWinners, "Two or more winners, cant end referendum.");
+        require(r.winner != address(0), "Seems like no one made a vote.");
+        require(!r.twoWinners, "Two or more winners, cant end referendum.");
 
         r.isEnded = true;
         uint total = calculateTotal(r.numVotes);
         total = takeCommission(total);
         lockedBalance -= total;
 
-        winner.transfer(total);
+        r.winner.transfer(total);
 
-        emit ReferendumEnded(_referendumId, winner, msg.sender);
+        emit ReferendumEnded(_referendumId, r.winner, msg.sender);
 
-        return winner;
+        return r.winner;
     }
 
     function withdraw(address payable _payAddress, uint _amount) external payable onlyOwner returns(bool) {

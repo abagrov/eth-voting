@@ -12,11 +12,10 @@ task("add", "Add referendum")
     .setAction(async (taskArgs, hre) => {
         return getContract("ReferendumContract", hre)
             .then((contract: Contract) => {
-                console.log(taskArgs.name);
                 return contract.addReferendum(taskArgs.name, { gasLimit: 500_000, });
             })
             .then((tr: TransactionResponse) => {
-                process.stdout.write(`TX hash: https://rinkeby.etherscan.io/tx/${tr.hash}`);
+                process.stdout.write(`TX: https://rinkeby.etherscan.io/tx/${tr.hash}`);
             });
     });
 
